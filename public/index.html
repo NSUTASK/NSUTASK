@@ -64,22 +64,34 @@
             <hr>
         </div>
         <div id="boardman" class="flex-fullcol">Получение списка досок…</div>
+
+        <div id="birdman" class="flex-fullcol" style="position: relative; top: 70%;">
+            <img src="../buttons/bird.png"> </img>
+        </div>
+        
     </aside>
 
     <aside id="taskman" class="flex-fullcol closed">
-        <button onclick="closeTaskmanView()">Закрыть</button>
+        <button class="red-image-button" onclick="closeTaskmanView()">Закрыть</button>
         <div id="taskman-taskinfo">
             Получение информации о задаче…
         </div>
+        <div id="taskman-file" class="flex-fullrow"><hr><br>
+            <h3 id="taskman-file__filename" style="margin-left: 10px;">Тут типа хоть че</h3><br>
+            <button id="taskman-file__btn-download" class="purple-image-button" onclick="DownloadButton()">Скачать</button>
+        </div>
         <hr>
-        <div id="taskman-tasksubmits">
+        <div id="taskman-tasksubmits"></div>
             Получение информации о посылках…
         </div>
+        <hr>
         <div id="taskman-actions" class="flex-fullcol">
             <textarea id="taskman-actions__submit-body" placeholder="Введите или вставьте сюда текст посылки"></textarea>
-            <button id="taskman-actions__btn-submit" onclick="taskmanSendSubmit()">Отправить</button>
-            <button id="taskman-actions__btn-delete" onclick="taskmanDeleteSubmit()">Удалить</button>
+            <button id="taskman-actions__btn-submit" class="green-image-button" onclick="taskmanSendSubmit()">Отправить</button>
+            <button id="taskman-actions__btn-delete" class="red-image-button" onclick="taskmanDeleteSubmit()">Удалить</button>
         </div>
+        <!-- <hr> -->
+        
     </aside>
 </main>
 
@@ -87,6 +99,16 @@
     <div id="modalman__content" class="flex-fullcol">
         Инициализация модальной формы…
     </div>
+
+    <div id="modalman-files">
+        <!-- <input type="file" id="modalman__file">Прикрепить Файл</input> -->
+        <br>
+        <button type="button" onclick="document.getElementById('fileInput').click()">Прикрепить файл</button> <!-- Кнопка для выбора файла -->
+        <span id="fileName" style="margin-left: 10px;">Файл не выбран</span> <!-- Поле для отображения имени файла -->
+        <button type="button" id="fileDelete" style="float: right; display: none;" onclick="deleteSelectedFile()">Удалить файл</button>
+        <input type="file" id="fileInput" style="display:none;" onchange="showFileName('')"> <!-- Скрытое поле для выбора файла -->
+    </div>
+
     <div id="modalman-actions" class="flex-fullrow">
         <button id="modalman-actions__send">Отправить</button>
         <button id="modalman-actions__cancel">Закрыть</button>

@@ -1,4 +1,5 @@
 var currentTask = null;
+var currentFileName = null;
 
 function openTaskmanView() {
     document.querySelectorAll(".taskman-spacer").forEach(e => e.classList.remove('closed'));
@@ -31,6 +32,23 @@ function taskmanGetInfo(taskId, submitStatus) {
         taskInfo.innerHTML = '';
         taskSubmits.innerHTML = '';
 
+        // Проверяем наличие файла
+        const taskDownload = document.getElementById('taskman-file');
+        const taskDownloadFilename = document.getElementById('taskman-file__filename');
+        // const taskDownloadButton = document.getElementById('taskman-file__btn-download');
+
+        if (data.file_name == null) {
+            taskDownload.style.display = 'none'; // Скрываем, если файл не найден
+        } else {
+            taskDownload.style.display = 'unset'; // Показываем блок файла
+            taskDownloadFilename.innerText = `Файл: ${data.file_name}`; // Обновляем имя файла
+            currentFileName = data.file_name;
+            // taskDownloadButton.onclick = () => {
+            //     window.location.href = `../api/board${currentBoard}/task/${taskId}/download`; // Обновляем ссылку для скачивания
+            // };
+        }
+        // console.log("BEEEEEEEP!!!!");
+
         const taskTitle = document.createElement('h1');
         taskTitle.innerText = data.title;
         taskInfo.appendChild(taskTitle);
@@ -42,7 +60,7 @@ function taskmanGetInfo(taskId, submitStatus) {
         taskInfo.appendChild(document.createElement('br'));
 
         const taskDue = document.createElement('i');
-        if (data.date_due !== null) {
+        if (data.date_due !== 'null') {
             const taskDueDate = ISOtoDDMMYY(data.date_due);
             taskDue.innerText = `Срок сдачи: ДО ${taskDueDate} (не включительно)`;
 
@@ -154,7 +172,7 @@ function taskmanDeleteSubmit() {
                 'Authorization': `Bearer ${token}`
             }
         })
-        .then(response => response.json())
+        .then(response => response.json()) // преобразование в json - json парсер
         .then(data => {
             if (data.message !== undefined) { alert(data.message); }
 
@@ -166,3 +184,37 @@ function taskmanDeleteSubmit() {
         .catch(error => console.error(error));
     }
 }
+
+
+function DownloadButton() { 
+
+    // const token = getToken();
+
+    fetch(`../api/board${currentBoard}/task${currentTask}/download`, {
+        method: 'GET',
+        // headers: {
+            // 'Authorization': `Bearer ${token}`
+        // }
+    })
+    .then(data => {
+        // console.log(data);
+        if (!data.ok) {
+            throw new Error('Ошибка при скачивании файла');
+        }
+        return data.blob(); // Преобразуем ответ в blob (файл)
+    })
+    .then(blob => {
+        const url = window.URL.createObjectURL(new Blob([blob])); // Создаем ссылку на blob-объект
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', currentFileName); // Имя файла (можно менять в зависимости от типа)
+        document.body.appendChild(link);
+        link.click();
+        link.remove(); // Убираем ссылку после скачивания
+    })
+    .catch(error => console.error('Ошибка:', error));
+    
+
+
+}
+

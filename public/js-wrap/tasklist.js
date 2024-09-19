@@ -1,3 +1,37 @@
+
+function showFileName(file_name) {
+    const fileNameDisplay = document.getElementById('fileName');
+    const file_delete = document.getElementById('fileDelete');
+    file_delete.style.display = 'unset';
+
+    if (file_name === null) {
+        fileNameDisplay.textContent = file_name;
+    } else {
+        // fileNameDisplay.textContent = "Файл не выбран";
+
+        const fileInput = document.getElementById('fileInput');
+
+        if (fileInput.files.length > 0) {
+            fileNameDisplay.textContent = fileInput.files[0].name;
+        } 
+        else 
+        {
+            file_delete.style.display = 'none';
+            fileNameDisplay.textContent = "Файл не выбран";
+        }
+    }
+}
+
+function deleteSelectedFile()
+{
+    document.getElementById('fileInput').value = null;
+    document.getElementById('fileName').textContent = "Файл не выбран";
+    document.getElementById('fileDelete').style.display = 'none';
+}
+
+
+////////////////////////////////////////////////////////////////////
+
 function createCategory(categoryId, categoryName) {
     const categoryContainer = document.createElement('section');
     categoryContainer.className = 'taskcat';
@@ -127,6 +161,18 @@ function createTasklistTask(taskData, submitData) {
     taskTitle.innerText = taskData.title;
     taskContent.appendChild(taskTitle);
 
+    if (taskData.file_name !== null)
+    {
+        const taskImageFile = document.createElement('img'); // Создаем элемент img
+        taskImageFile.src = '../buttons/src_file.png'; // Указываем путь к изображению
+        taskImageFile.style.width = '30px'; // Пример: устанавливаем ширину изображения
+        taskImageFile.style.height = 'auto'; // Пример: высота будет автоматически подстраиваться
+        // Добавляем отступы
+        taskImageFile.style.marginTop = '-25px';
+        taskImageFile.style.marginLeft = '250px';
+        taskContent.appendChild(taskImageFile); // Добавляем изображение в taskContent или другой контейнер
+    }
+
     const taskText = document.createElement('p');
     taskText.className = 'task-content__text text-clip';
     taskText.innerText = taskData.body;
@@ -135,7 +181,7 @@ function createTasklistTask(taskData, submitData) {
     const taskDue = document.createElement('i');
     taskDue.className = 'task-content__due';
 
-    if (taskData.date_due !== null) {
+    if (taskData.date_due !== 'null') {
     const taskDueDate = ISOtoDDMMYY(taskData.date_due);
         taskDue.innerText = `Срок сдачи: ДО ${taskDueDate}`;
 
@@ -196,21 +242,32 @@ function tasklistNewTask() {
         { name: '<i>Оставьте пустым, чтобы сделать задачу бессрочной.</i>', type: 'custom' },
     ];
 
-    modalmanForm(formData)
+    showFileName('');
+
+    modalmanForm(formData, true)
     .then(formResults => {
         if (!formResults) { return; }
+        
+        console.log('Полученная форма файла -> ', formResults[3]);
+
+        // Создаем объект FormData
+        const formData = new FormData();
+        formData.append('title', formResults[0]);
+        formData.append('body', formResults[1]);
+        formData.append('dateDue', formResults[2] || null);
+
+        // Получаем файл из fileInput
+        const fileInput = document.getElementById('fileInput');
+        if (fileInput.files.length > 0) {
+            formData.append('file', fileInput.files[0]); // Добавляем файл в FormData
+        }
 
         fetch(`../api/board${currentBoard}/tasks`, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
+                'Authorization': `Bearer ${token}` // Устанавливаем только заголовок авторизации
             },
-            body: JSON.stringify({
-                title: formResults[0],
-                body: formResults[1],
-                dateDue: formResults[2] || null
-            })
+            body: formData // Передаем FormData
         })
         .then(response => response.json())
         .then(data => {
@@ -222,6 +279,7 @@ function tasklistNewTask() {
     });
 }
 
+
 function tasklistEditTask(taskId) {
     const token = getToken();
 
@@ -232,7 +290,9 @@ function tasklistEditTask(taskId) {
     })
     .then(response => response.json())
     .then(data => {
-        //console.log(data);
+        console.log(data);
+        
+        // document.getElementById('fileName').value = data.file_name;
         const formData = [
             { name: '<h2>Изменение задачи</h2>', type: 'custom' },
             { name: 'Заголовок задачи', type: 'text', allowEmpty: false, defaultValue: data.title },
@@ -241,32 +301,44 @@ function tasklistEditTask(taskId) {
             { name: '<i>Оставьте пустым, чтобы сделать задачу бессрочной.</i>', type: 'custom' },
         ];
 
-        modalmanForm(formData)
+        showFileName(data.file_name);
+
+        modalmanForm(formData, true)
         .then(formResults => {
             if (!formResults) { return; }
+            
+            // Создаем объект FormData для отправки формы
+            const formData = new FormData();
+            formData.append('title', formResults[0]);
+            formData.append('body', formResults[1]);
+            formData.append('dateDue', formResults[2] || null);
 
+            // Получаем файл из fileInput
+            const fileInput = document.getElementById('fileInput');
+            if (fileInput && fileInput.files.length > 0) {
+                formData.append('file', fileInput.files[0]); // Добавляем файл в FormData
+            }
+
+            // Отправляем запрос на изменение задачи
             fetch(`../api/board${currentBoard}/task${taskId}`, {
                 method: 'PUT',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
+                    'Authorization': `Bearer ${token}` // Заголовок авторизации
                 },
-                body: JSON.stringify({
-                    title: formResults[0],
-                    body: formResults[1],
-                    dateDue: formResults[2] || null
-                })
+                body: formData // Передаем объект FormData
             })
             .then(response => response.json())
             .then(data => {
-                if (data.message !== undefined) { alert(data.message); }
-
+                if (data.message !== undefined) {
+                    alert(data.message);
+                }
                 updateTasklist();
             })
             .catch(error => console.error(error));
         });
     });
 }
+
 
 function tasklistDeleteTask(taskId) {
     const token = getToken();
@@ -310,7 +382,7 @@ function tasklistSubmitsPanel(taskId) {
                 }))
             ];
 
-            modalmanForm(formData).then(formResults => {
+            modalmanForm(formData, false).then(formResults => {
                 if (!formResults) return;
 
                 const selectedSubmitIndex = formResults.findIndex(value => value === true);
@@ -340,7 +412,7 @@ function tasklistSubmitsPanel(taskId) {
                         { name: '🐝 На рассмотрении…', type: 'radio', defaultValue: (submitData.status === 'pending'), allowEmpty: false }
                     ];
 
-                    modalmanForm(statusFormData).then(statusFormResults => {
+                    modalmanForm(statusFormData, false).then(statusFormResults => {
                         if (!statusFormResults) { return };
 
                         const selectedStatusIndex = statusFormResults.findIndex(value => value === true);
@@ -386,3 +458,33 @@ function tasklistSubmitsPanel(taskId) {
     })
     .catch(error => alert(error.message));
 }
+
+
+
+// document.getElementById('downloadButton').addEventListener('click', function() {
+//     const taskId = this.getAttribute('data-task-id');
+//     const boardId = this.getAttribute('data-board-id');
+
+//     fetch(`/api/board${boardId}/task${taskId}/download`, {
+//         method: 'GET',
+//         headers: {
+//             'Content-Type': 'application/json',
+//         }
+//     })
+//     .then(response => {
+//         if (!response.ok) {
+//             throw new Error('Ошибка при скачивании файла');
+//         }
+//         return response.blob(); // Преобразуем ответ в blob (файл)
+//     })
+//     .then(blob => {
+//         const url = window.URL.createObjectURL(new Blob([blob])); // Создаем ссылку на blob-объект
+//         const link = document.createElement('a');
+//         link.href = url;
+//         link.setAttribute('download', `task_${taskId}.zip`); // Имя файла (можно менять в зависимости от типа)
+//         document.body.appendChild(link);
+//         link.click();
+//         link.remove(); // Убираем ссылку после скачивания
+//     })
+//     .catch(error => console.error('Ошибка:', error));
+// });
